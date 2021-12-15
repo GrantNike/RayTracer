@@ -21,6 +21,10 @@ typedef struct{
     glm::vec3 hit_normal;
 }intersection;
 
+typedef struct {
+	unsigned char r, g, b;
+}pixel;
+
 
 //Returns true if the ray vector intersects the given shape at the given point
 //intersection RayIntersection(glm::vec3 ray_vector);

@@ -18,18 +18,49 @@ typedef struct {
 }glob;
 glob global;
 
-typedef struct {
-	unsigned char r, g, b;
-}pixel;
-
-intersection RayIntersection(glm::vec3 ray_vector){
+/*************************************************************************
+ * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
+ ************************************************************************/
+//Determines the intersection point of the ray vector closest to the eye
+intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
+    intersection forReturn;
+    forReturn.isIntersection = false;
+    std::vector<intersection> intersected_objects;
     //Loop through all objects in scene looking for intersections with ray_vector
+    for(int i=0;i<global.shapes.size();i++){
+        intersection current = global.shapes[i].getIntersection(ray_vector);
+        if(current.isIntersection){
+            intersected_objects.push_back(current);
+        }
+    }
     //Check list of intersections for one closest to eye position, return this intersection
-    //if no intersections return false
-}
+    if(intersected_objects.size()>0){
+        float min = glm::distance(intersected_objects[0].hit_point,eye_position);
+        forReturn = intersected_objects[0];
+        for(int i=1;i<intersected_objects.size();i++){
+            float distance = glm::distance(intersected_objects[0].hit_point,eye_position);
+            if(distance < min){
+                min = distance;
+                forReturn = intersected_objects[i];
+            }
+        }
 
+    }
+    //if no intersections return false
+    return forReturn;
+}
+//Determines local lighting effects at hit point
+glm::vec3 shade(intersection hit){
+    //Compute diffuse lighting 
+    //Compute specular lighting 
+    //Compute ambient lighting
+    //Return new colour with added lighting effects
+}
+/*************************************************************************
+ * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
+ ************************************************************************/
 //Returns the colour of the given ray_vector
-glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth){
+glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position){
     //Values will be used to get a final colour value if the ray has intersected an object
     glm::vec3 local_colour;
     glm::vec3 reflect_colour;
@@ -39,9 +70,9 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth){
     
     if(rec_depth > MAX_DEPTH){return global.background_colour;}
     else {
-        hit = RayIntersection(ray_vector); 
+        hit = RayIntersection(ray_vector,eye_position); 
         if(hit.isIntersection){
-            //local_colour = shade(hit);
+            local_colour = shade(hit);
             /*if (hit_object.isReflective()){
                 glm::vec3 reflection_vector = calc_reflection(ray_vector,hit_object,hit_point,hit_normal);
                 reflect_colour = RayTrace((hit_point,reflection_vector),rec_depth+1);
@@ -86,9 +117,9 @@ void set_image(){
 
     for(int i=0;i<global.width;i++){
         for(int j=0;j<global.height;j++){
-            image[i*global.width +j].r = (float)(rand()%256);
-            image[i*global.width +j].g = (float)(rand()%256);
-            image[i*global.width +j].b = (float)(rand()%256);
+            image[i*global.width +j].r = glm::clamp((float)(rand()%700),0.0f,256.0f);
+            image[i*global.width +j].g = glm::clamp((float)(rand()%700),0.0f,256.0f);
+            image[i*global.width +j].b = glm::clamp((float)(rand()%700),0.0f,256.0f);
         }
     }
 

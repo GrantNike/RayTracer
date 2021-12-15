@@ -8,11 +8,14 @@ COSC 3P98 Final Project
 #include <string>
 #include <glm/glm.hpp>
 
-
+/*************************************************************************
+ * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
+ ************************************************************************/
 class shape{
     public:
     //Gives the type of the shape
     std::string getType();
+    intersection getIntersection(glm::vec3 ray_vector);
     bool isReflective(){
         return reflective;
     }
@@ -29,7 +32,9 @@ class shape{
     float reflection_coeff;
     float refraction_index;
 };
-
+/*************************************************************************
+ * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
+ ************************************************************************/
 class sphere : public shape {
     public:
     sphere(glm::vec3 position, float radius){
@@ -51,7 +56,9 @@ class sphere : public shape {
     float radius;
     float radius_squared;
 };
-
+/*************************************************************************
+ * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
+ ************************************************************************/
 class plane : public shape {
     /*
       Point P = (x1,y1,z1)
@@ -82,7 +89,9 @@ class plane : public shape {
     glm::vec3 normal_vector;
     float d;
 };
-
+/*************************************************************************
+ * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
+ ************************************************************************/
 class polygon : public shape {
     public:
     polygon(glm::vec3 T1,glm::vec3 T2, glm::vec3 T3){
