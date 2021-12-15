@@ -14,9 +14,16 @@ COSC 3P98 Final Project
 #include "shapes.cpp"
 #include "lights.cpp"
 
+typedef struct{
+    bool isIntersection;
+    shape hit_object;
+    glm::vec3 hit_point;
+    glm::vec3 hit_normal;
+}intersection;
+
 
 //Returns true if the ray vector intersects the given shape at the given point
-bool RayIntersection(glm::vec3 ray_vector);
+//intersection RayIntersection(glm::vec3 ray_vector);
 //Returns the colour of the object at the given point
 glm::vec3 shade(intersection hit);
 //Returns the reflection vector of the given ray vector bouncing off of the given object

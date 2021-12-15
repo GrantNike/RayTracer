@@ -22,11 +22,11 @@ typedef struct {
 	unsigned char r, g, b;
 }pixel;
 
-typedef struct{
-    shape hit_object;
-    glm::vec3 hit_point;
-    glm::vec3 hit_normal;
-}intersection;
+intersection RayIntersection(glm::vec3 ray_vector){
+    //Loop through all objects in scene looking for intersections with ray_vector
+    //Check list of intersections for one closest to eye position, return this intersection
+    //if no intersections return false
+}
 
 //Returns the colour of the given ray_vector
 glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth){
@@ -39,8 +39,9 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth){
     
     if(rec_depth > MAX_DEPTH){return global.background_colour;}
     else {
-        if(RayIntersection(ray_vector)){
-            local_colour = shade(hit);
+        hit = RayIntersection(ray_vector); 
+        if(hit.isIntersection){
+            //local_colour = shade(hit);
             /*if (hit_object.isReflective()){
                 glm::vec3 reflection_vector = calc_reflection(ray_vector,hit_object,hit_point,hit_normal);
                 reflect_colour = RayTrace((hit_point,reflection_vector),rec_depth+1);
@@ -49,7 +50,7 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth){
                 glm::vec3 trans_vector = calc_transmission(ray_vector,hit_object,hit_point,hit_normal);
                 trans_colour = RayTrace((hit_point,trans_vector),rec_depth+1);
             }*/
-            return glm::clamp(local_colour+reflect_colour+trans_colour,0.0f,256.0f); 
+            return glm::clamp(local_colour+reflect_colour+trans_colour,0.0f,256.0f);
         }
         else{return global.background_colour;}
     }
@@ -85,9 +86,9 @@ void set_image(){
 
     for(int i=0;i<global.width;i++){
         for(int j=0;j<global.height;j++){
-            image[i*global.width +j].r = rand()%256;
-            image[i*global.width +j].g = rand()%256;
-            image[i*global.width +j].b = rand()%256;
+            image[i*global.width +j].r = (float)(rand()%256);
+            image[i*global.width +j].g = (float)(rand()%256);
+            image[i*global.width +j].b = (float)(rand()%256);
         }
     }
 
@@ -95,5 +96,5 @@ void set_image(){
 }
 
 int main (int argc , char **argv){
-    
+    set_image();
 }
