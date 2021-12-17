@@ -16,7 +16,7 @@ COSC 3P98 Final Project
 
 typedef struct{
     bool isIntersection;
-    shape hit_object;
+    shape *hit_object;
     glm::vec3 hit_point;
     glm::vec3 hit_normal;
 }intersection;

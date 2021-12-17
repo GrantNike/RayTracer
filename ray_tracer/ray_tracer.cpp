@@ -28,7 +28,7 @@ intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
     std::vector<intersection> intersected_objects;
     //Loop through all objects in scene looking for intersections with ray_vector
     for(int i=0;i<global.shapes.size();i++){
-        intersection current = global.shapes[i].getIntersection(ray_vector);
+        intersection current = global.shapes[i].getIntersection(ray_vector,eye_position);
         if(current.isIntersection){
             intersected_objects.push_back(current);
         }

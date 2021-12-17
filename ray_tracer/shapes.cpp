@@ -15,7 +15,7 @@ class shape{
     public:
     //Gives the type of the shape
     std::string getType();
-    intersection getIntersection(glm::vec3 ray_vector);
+    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position);
     bool isReflective(){
         return reflective;
     }
@@ -50,6 +50,60 @@ class sphere : public shape {
     }
     glm::vec3 getPosition(){
         return position;
+    }
+    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
+        intersection forReturn;
+        forReturn.isIntersection = false;
+        //For B and C in Quadratic equation for solving circle intersection
+        float x0minusxc = eye_position[0]-position[0];
+        float y0minusyc = eye_position[1]-position[1];
+        float z0minuszc = eye_position[2]-position[2];
+        float xd = ray_vector[0];
+        float yd = ray_vector[1];
+        float zd = ray_vector[2];
+        float B = 2*( xd*x0minusxc + yd*y0minusyc + zd*z0minuszc);
+        float C =  (x0minusxc*x0minusxc) + (y0minusyc*y0minusyc) + (z0minuszc*z0minuszc) - radius_squared;
+        //Discriminant of quadratic equation
+        float discriminant = B*B - 4*C;
+        if(discriminant >=0){
+            float t0 = (-B-sqrt(discriminant))/2.0f;
+            float t1 = (-B+sqrt(discriminant))/2.0f;
+            bool t0positive = t0 >= 0;
+            bool t1positive = t1 >= 0;
+            //t is the smallest of the positive roots of the quadratic equation
+            float t;
+            if(t0positive && t1positive){
+                t = std::min(t0,t1);
+            }
+            else if(t0positive){
+                t = t0;
+            }
+            else if(t1positive){
+                t = t1;
+            }
+            else{
+                //Return no intersection
+                return forReturn;
+            }
+            forReturn.isIntersection = true;
+            forReturn.hit_object = this;
+            //Calculate hit point of ray on sphere
+            float xi = eye_position[0] + xd*t;
+            float yi = eye_position[1] + yd*t;
+            float zi = eye_position[2] + zd*t;
+            forReturn.hit_point = glm::vec3(xi,yi,zi);
+            //Calculate normal vector at hit point
+            float xnormal = (xi-position[0])/radius;
+            float ynormal = (yi-position[1])/radius;
+            float znormal = (zi-position[2])/radius;
+            forReturn.hit_normal = glm::vec3(xnormal,ynormal,znormal);
+            //Return data
+            return forReturn;
+        }
+        else{
+            //Return no intersection
+            return forReturn;
+        }
     }
     private:
     glm::vec3 position;
