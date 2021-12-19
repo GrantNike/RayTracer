@@ -8,6 +8,13 @@ COSC 3P98 Final Project
 #include <string>
 #include <glm/glm.hpp>
 
+typedef struct{
+    bool isIntersection;
+    //shape *hit_object;
+    glm::vec3 hit_point;
+    glm::vec3 hit_normal;
+}intersection;
+
 /*************************************************************************
  * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
  ************************************************************************/
@@ -32,6 +39,7 @@ class shape{
     float reflection_coeff;
     float refraction_index;
 };
+
 /*************************************************************************
  * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
  ************************************************************************/
@@ -86,7 +94,7 @@ class sphere : public shape {
                 return forReturn;
             }
             forReturn.isIntersection = true;
-            forReturn.hit_object = this;
+            //forReturn.hit_object = this;
             //Calculate hit point of ray on sphere
             float xi = eye_position[0] + xd*t;
             float yi = eye_position[1] + yd*t;
@@ -138,6 +146,27 @@ class plane : public shape {
     float getD(){
         return d;
     }
+    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
+        intersection forReturn;
+        forReturn.isIntersection = false;
+        float normalDotEye = glm::dot(normal_vector,eye_position);
+        //If it equals 0, then the ray is parallel to the plane, 
+        //if it is greater than 0 then the normal of the plane is pointing away from the ray
+        if(normalDotEye >= 0) return forReturn;
+        else{
+            float t = -1.0f*(normalDotEye + d)/(glm::dot(normal_vector,ray_vector));
+            //If t<0 then plane is behind ray
+            if(t<0) return forReturn;
+            else{
+                forReturn.isIntersection = true;
+                float xi = eye_position[0]+ray_vector[0]*t;
+                float yi = eye_position[1]+ray_vector[1]*t;
+                float zi = eye_position[2]+ray_vector[2]*t;
+                forReturn.hit_point = glm::vec3(xi,yi,zi);
+                forReturn.hit_normal = normal_vector;
+            }
+        }
+    }
     private:
     glm::vec3 point;
     glm::vec3 normal_vector;
@@ -160,6 +189,7 @@ class polygon : public shape {
     std::string getType(){
         return "polygon";
     }
+    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position);
     private:
     //The plane the polygon is laying upon
     shape p;

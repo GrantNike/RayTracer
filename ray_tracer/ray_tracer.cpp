@@ -50,12 +50,12 @@ intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
     return forReturn;
 }
 //Determines local lighting effects at hit point
-glm::vec3 shade(intersection hit){
+/*glm::vec3 shade(intersection hit){
     //Compute diffuse lighting 
     //Compute specular lighting 
     //Compute ambient lighting
     //Return new colour with added lighting effects
-}
+}*/
 /*************************************************************************
  * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
  ************************************************************************/
@@ -72,7 +72,7 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position){
     else {
         hit = RayIntersection(ray_vector,eye_position); 
         if(hit.isIntersection){
-            local_colour = shade(hit);
+            //local_colour = shade(hit);
             /*if (hit_object.isReflective()){
                 glm::vec3 reflection_vector = calc_reflection(ray_vector,hit_object,hit_point,hit_normal);
                 reflect_colour = RayTrace((hit_point,reflection_vector),rec_depth+1);

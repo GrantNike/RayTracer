@@ -14,13 +14,6 @@ COSC 3P98 Final Project
 #include "shapes.cpp"
 #include "lights.cpp"
 
-typedef struct{
-    bool isIntersection;
-    shape *hit_object;
-    glm::vec3 hit_point;
-    glm::vec3 hit_normal;
-}intersection;
-
 typedef struct {
 	unsigned char r, g, b;
 }pixel;
