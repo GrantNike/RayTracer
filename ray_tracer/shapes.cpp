@@ -10,7 +10,7 @@ COSC 3P98 Final Project
 
 typedef struct{
     bool isIntersection;
-    //shape *hit_object;
+    shape hit_object;
     glm::vec3 hit_point;
     glm::vec3 hit_normal;
 }intersection;
@@ -23,17 +23,48 @@ class shape{
     //Gives the type of the shape
     std::string getType();
     intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position);
+    //Check if there is another shape between the shape and the given light source
+    bool light_blocked(light light, intersection hit, std::vector<shape*> &shapes){
+        glm::vec3 light_position = light.get_position();
+        glm::vec3 light_vector = glm::normalize(hit.hit_point-light_position);
+        float light_to_shape = glm::distance(hit.hit_point,light_position);
+        for(shape *s:shapes){
+            if(s == this) continue;
+            intersection between = getIntersection(light_vector,light_position);
+
+            if(between.isIntersection){
+                float between_distance = glm::distance(between.hit_point,light_position);
+                if(between_distance < light_to_shape){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     bool isReflective(){
         return reflective;
     }
     bool isRefractive(){
         return refractive;
     }
-    private:
+    glm::vec3 get_diffuse(){
+        return diffuse_coefficient;
+    }
+    glm::vec3 get_specular(){
+        return specular_coefficient;
+    }
+    float get_highlight(){
+        return specular_highlight_coefficient;
+    }
+    glm::vec3 get_ambient(){
+        return ambient_coefficient;
+    }
+    protected:
     glm::vec3 colour;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-    glm::vec3 ambient;
+    glm::vec3 diffuse_coefficient;
+    glm::vec3 specular_coefficient;
+    float specular_highlight_coefficient;
+    glm::vec3 ambient_coefficient;
     bool reflective;
     bool refractive;
     float reflection_coeff;
@@ -45,10 +76,14 @@ class shape{
  ************************************************************************/
 class sphere : public shape {
     public:
-    sphere(glm::vec3 position, float radius){
+    sphere(glm::vec3 position, float radius,glm::vec3 diffuse,glm::vec3 ambient,glm::vec3 specular, float specular_highlight){
         this->position = position;
         this->radius = radius;
         radius_squared = radius * radius;
+        this->ambient_coefficient = ambient;
+        this->specular_coefficient = specular;
+        this->specular_highlight_coefficient = specular_highlight;
+        this->diffuse_coefficient = diffuse;
     }
     std::string getType(){
         return "sphere";
@@ -105,6 +140,7 @@ class sphere : public shape {
             float ynormal = (yi-position[1])/radius;
             float znormal = (zi-position[2])/radius;
             forReturn.hit_normal = glm::vec3(xnormal,ynormal,znormal);
+            forReturn.hit_object = this;
             //Return data
             return forReturn;
         }
@@ -129,6 +165,16 @@ class plane : public shape {
                         = AX + BY + CZ = (Ax1+By1+Cz1) <- d = dot product(point,normal vector)
     */
     public:
+    plane(glm::vec3 point, glm::vec3 normal_vector,glm::vec3 diffuse,glm::vec3 ambient,glm::vec3 specular,float specular_highlight){
+        this->point = point;
+        this->normal_vector = normal_vector;
+        d = glm::dot(point,normal_vector);
+        this->ambient_coefficient = ambient;
+        this->specular_coefficient = specular;
+        this->specular_highlight_coefficient = specular_highlight;
+        this->diffuse_coefficient = diffuse;
+    }
+    //For use by the polygon class
     plane(glm::vec3 point, glm::vec3 normal_vector){
         this->point = point;
         this->normal_vector = normal_vector;
@@ -164,9 +210,11 @@ class plane : public shape {
                 float zi = eye_position[2]+ray_vector[2]*t;
                 forReturn.hit_point = glm::vec3(xi,yi,zi);
                 forReturn.hit_normal = normal_vector;
+                forReturn.hit_object = this;
             }
         }
     }
+    
     private:
     glm::vec3 point;
     glm::vec3 normal_vector;
@@ -177,7 +225,7 @@ class plane : public shape {
  ************************************************************************/
 class polygon : public shape {
     public:
-    polygon(glm::vec3 T1,glm::vec3 T2, glm::vec3 T3){
+    polygon(glm::vec3 T1,glm::vec3 T2, glm::vec3 T3, glm::vec3 diffuse,glm::vec3 ambient,glm::vec3 specular,float specular_highlight){
         this->T1 = T1;
         this->T2 = T2;
         this->T3 = T3;
@@ -185,6 +233,10 @@ class polygon : public shape {
         glm::vec3 normal_vector = glm::cross(T1,T2);
         plane p(T1,normal_vector);
         this->p = p;
+        this->ambient_coefficient = ambient;
+        this->specular_coefficient = specular;
+        this->specular_highlight_coefficient = specular_highlight;
+        this->diffuse_coefficient = diffuse;
     }
     std::string getType(){
         return "polygon";
@@ -207,7 +259,10 @@ class polygon : public shape {
             float alpha = (dot11 * dot02 - dot01 * dot12) * invDenom;
             float beta = (dot00 * dot12 - dot01 * dot02) * invDenom;
             if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1){
-                forReturn = plane_intersect;
+                forReturn.isIntersection = true;
+                forReturn.hit_point = P;
+                forReturn.hit_normal = plane_intersect.hit_normal;
+                forReturn.hit_object = this;
             }
         }
         return forReturn;

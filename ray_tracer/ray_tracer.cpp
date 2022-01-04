@@ -3,6 +3,8 @@ Grant Nike
 6349302
 January 10th
 COSC 3P98 Final Project
+
+Uses code from FreeImageTest.c from OpenGLExamples on 3P98 website
 */
 
 #include "header.h"
@@ -10,9 +12,15 @@ COSC 3P98 Final Project
 #define MAX_DEPTH 25
 
 typedef struct {
-    std::vector<shape> shapes;
+    //All the shapes in the scene
+    std::vector<shape*> shapes;
+    //All the lights in the scene
     std::vector<light> lights;
+    //Colour of the background of the scene
     glm::vec3 background_colour;
+    //Ambient lighting coefficient of the scene
+    glm::vec3 environment_ambient;
+    //Size of the image
     int width = 1920;
     int height = 1080;
 }glob;
@@ -22,13 +30,13 @@ glob global;
  * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
  ************************************************************************/
 //Determines the intersection point of the ray vector closest to the eye
-intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
+intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,std::vector<shape*> &shapes){
     intersection forReturn;
     forReturn.isIntersection = false;
     std::vector<intersection> intersected_objects;
     //Loop through all objects in scene looking for intersections with ray_vector
     for(int i=0;i<global.shapes.size();i++){
-        intersection current = global.shapes[i].getIntersection(ray_vector,eye_position);
+        intersection current = shapes[i]->getIntersection(ray_vector,eye_position);
         if(current.isIntersection){
             intersected_objects.push_back(current);
         }
@@ -50,17 +58,54 @@ intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
     return forReturn;
 }
 //Determines local lighting effects at hit point
-/*glm::vec3 shade(intersection hit){
-    //Compute diffuse lighting 
-    //Compute specular lighting 
+glm::vec3 shade(intersection hit,glm::vec3 eye_position,glm::vec3 environment_ambient){
+    shape object_hit = hit.hit_object;
+    //Initialize minimum values for diffuse and specular lighting
+    glm::vec3 diffuse_lighting(0,0,0);
+    glm::vec3 specular_lighting(0,0,0);
+    //Compute diffuse and specular lighting for all light sources in scene
+    for(light l:global.lights){
+        //Only calculate diffuse and specular lighting if there is a clear line of sight from the light source to the shape
+        if(!object_hit.light_blocked(l,hit,global.shapes)){
+            glm::vec3 light_intensity = l.get_intensity();
+            glm::vec3 light_position = l.get_position();
+
+            /*Compute diffuse lighting for current light source*/
+            //Diffuse lighting coefficient
+            glm::vec3 diffuse_coefficient = object_hit.get_diffuse();
+            //Cosine of the angle between the vector of the light hitting the object and the normal vector of the hit point
+            float cosine_A = glm::dot(glm::normalize(light_position-hit.hit_point),hit.hit_normal);
+            //The diffuse lighting at the hit point from light l
+            glm::vec3 diffuse = diffuse_coefficient * glm::clamp(light_intensity * cosine_A,0.0f,255.0f);
+            //Take the highest intesity diffuse lighting from all light sources as the final diffuse value
+            diffuse_lighting = glm::max(diffuse,diffuse_lighting);
+
+            /*Compute specular lighting for current light source*/
+            //Specular lighting coefficients
+            glm::vec3 specular_coefficient = object_hit.get_specular();
+            float specular_highlight = object_hit.get_highlight();
+            //The ray which goes from the eye to the hit point of the shape
+            glm::vec3 incident_ray = glm::normalize(eye_position-hit.hit_point);
+            //The ray which reflects off the surface of the object starting with the vector of the light source hitting the hit point
+            glm::vec3 reflection_ray = glm::reflect(glm::normalize(hit.hit_point-light_position),hit.hit_normal);
+            //The cosine of the angle between the incident ray and the reflection ray
+            float cosine_B = glm::dot(incident_ray,reflection_ray);
+            //The specular lighting at the hit point from the light l
+            glm::vec3 specular = specular_coefficient * glm::clamp(light_intensity * powf(cosine_B,specular_highlight),0.0f,255.0f);
+            //Take the highest intesity specular lighting from all light sources as the final specular value
+            specular_lighting = glm::max(specular,specular_lighting);
+        }
+    }
     //Compute ambient lighting
+    glm::vec3 ambient_lighting = glm::clamp(object_hit.get_ambient()*environment_ambient,glm::vec3(0.0f),glm::vec3(255.0f));
     //Return new colour with added lighting effects
-}*/
+    return glm::clamp(ambient_lighting + diffuse_lighting + specular_lighting,glm::vec3(0.0f),glm::vec3(255.0f));
+}
 /*************************************************************************
  * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
  ************************************************************************/
 //Returns the colour of the given ray_vector
-glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position){
+glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position,std::vector<shape*> shapes){
     //Values will be used to get a final colour value if the ray has intersected an object
     glm::vec3 local_colour;
     glm::vec3 reflect_colour;
@@ -70,9 +115,9 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position){
     
     if(rec_depth > MAX_DEPTH){return global.background_colour;}
     else {
-        hit = RayIntersection(ray_vector,eye_position); 
+        hit = RayIntersection(ray_vector,eye_position,shapes); 
         if(hit.isIntersection){
-            //local_colour = shade(hit);
+            local_colour = shade(hit,eye_position,global.environment_ambient);
             /*if (hit_object.isReflective()){
                 glm::vec3 reflection_vector = calc_reflection(ray_vector,hit_object,hit_point,hit_normal);
                 reflect_colour = RayTrace((hit_point,reflection_vector),rec_depth+1);
@@ -81,13 +126,14 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position){
                 glm::vec3 trans_vector = calc_transmission(ray_vector,hit_object,hit_point,hit_normal);
                 trans_colour = RayTrace((hit_point,trans_vector),rec_depth+1);
             }*/
-            return glm::clamp(local_colour+reflect_colour+trans_colour,0.0f,256.0f);
+            return glm::clamp(local_colour+reflect_colour+trans_colour,0.0f,255.0f);
         }
         else{return global.background_colour;}
     }
 }
 
 //write image to file
+//From FreeImageTest.c
 void write_img(char *name, pixel *data, int width, int height) {
 	FIBITMAP *image;
 	RGBQUAD aPixel;
@@ -117,9 +163,9 @@ void set_image(){
 
     for(int i=0;i<global.width;i++){
         for(int j=0;j<global.height;j++){
-            image[i*global.width +j].r = glm::clamp((float)(rand()%700),0.0f,256.0f);
-            image[i*global.width +j].g = glm::clamp((float)(rand()%700),0.0f,256.0f);
-            image[i*global.width +j].b = glm::clamp((float)(rand()%700),0.0f,256.0f);
+            image[i*global.width +j].r = glm::clamp((float)(rand()%700),0.0f,255.0f);
+            image[i*global.width +j].g = glm::clamp((float)(rand()%700),0.0f,255.0f);
+            image[i*global.width +j].b = glm::clamp((float)(rand()%700),0.0f,255.0f);
         }
     }
 
