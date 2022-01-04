@@ -189,7 +189,29 @@ class polygon : public shape {
     std::string getType(){
         return "polygon";
     }
-    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position);
+    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
+        intersection forReturn;
+        forReturn.isIntersection = false;
+        intersection plane_intersect = p.getIntersection(ray_vector,eye_position);
+        if(plane_intersect.isIntersection){
+            //Polygon interior test using barycentric coordinates
+            glm::vec3 P = plane_intersect.hit_point;
+            glm::vec3 v0 = T2 - T1;
+            glm::vec3 v1 = T3 - T1;
+            float dot00 = glm::dot(v0,v0);
+            float dot01 = glm::dot(v0,v1);
+            float dot02 = glm::dot(v0,P);
+            float dot11 = glm::dot(v1,v1);
+            float dot12 = glm::dot(v1,P);
+            float invDenom = 1/((dot00*dot11)-(dot01*dot01));
+            float alpha = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            float beta = (dot00 * dot12 - dot01 * dot02) * invDenom;
+            if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1){
+                forReturn = plane_intersect;
+            }
+        }
+        return forReturn;
+    }
     private:
     //The plane the polygon is laying upon
     shape p;
