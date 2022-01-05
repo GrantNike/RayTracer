@@ -140,6 +140,8 @@ class sphere : public shape {
             float ynormal = (yi-position[1])/radius;
             float znormal = (zi-position[2])/radius;
             forReturn.hit_normal = glm::vec3(xnormal,ynormal,znormal);
+            //Normalize normal vector
+            forReturn.hit_normal = glm::normalize(forReturn.hit_normal);
             forReturn.hit_object = this;
             //Return data
             return forReturn;

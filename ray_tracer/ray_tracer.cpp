@@ -52,11 +52,11 @@ intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,std::ve
                 forReturn = intersected_objects[i];
             }
         }
-
     }
     //if no intersections return false
     return forReturn;
 }
+
 //Determines local lighting effects at hit point
 glm::vec3 shade(intersection hit,glm::vec3 eye_position,glm::vec3 environment_ambient){
     shape object_hit = hit.hit_object;
@@ -101,6 +101,7 @@ glm::vec3 shade(intersection hit,glm::vec3 eye_position,glm::vec3 environment_am
     //Return new colour with added lighting effects
     return glm::clamp(ambient_lighting + diffuse_lighting + specular_lighting,glm::vec3(0.0f),glm::vec3(255.0f));
 }
+
 /*************************************************************************
  * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
  ************************************************************************/
