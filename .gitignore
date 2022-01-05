@@ -1,5 +1,6 @@
 *.pdf
 *.json
 .vscode
-Test Image.png
+*.png
+*.txt
 RayTracer

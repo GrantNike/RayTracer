@@ -7,22 +7,23 @@ COSC 3P98 Final Project
 
 #include <string>
 #include <glm/glm.hpp>
+#include <vector>
 
-typedef struct{
-    bool isIntersection;
-    shape hit_object;
-    glm::vec3 hit_point;
-    glm::vec3 hit_normal;
-}intersection;
+#include "lights.cpp"
 
 /*************************************************************************
  * MAKE SURE TO NORMALIZE ALL VECTORS!!!!!!!!!!!!
  ************************************************************************/
 class shape{
     public:
-    //Gives the type of the shape
-    std::string getType();
-    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position);
+    typedef struct{
+        bool isIntersection;
+        glm::vec3 hit_point;
+        glm::vec3 hit_normal;
+        shape* hit_object;
+    }intersection;
+    //Gets intersection of ray with an object in scene
+    virtual intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position) = 0;
     //Check if there is another shape between the shape and the given light source
     bool light_blocked(light light, intersection hit, std::vector<shape*> &shapes){
         glm::vec3 light_position = light.get_position();
@@ -76,7 +77,7 @@ class shape{
  ************************************************************************/
 class sphere : public shape {
     public:
-    sphere(glm::vec3 position, float radius,glm::vec3 diffuse,glm::vec3 ambient,glm::vec3 specular, float specular_highlight){
+    sphere(glm::vec3 position, float radius,glm::vec3 ambient,glm::vec3 diffuse,glm::vec3 specular, float specular_highlight){
         this->position = position;
         this->radius = radius;
         radius_squared = radius * radius;
@@ -182,6 +183,7 @@ class plane : public shape {
         this->normal_vector = normal_vector;
         d = glm::dot(point,normal_vector);
     }
+    plane(){}
     std::string getType(){
         return "plane";
     }
@@ -216,7 +218,6 @@ class plane : public shape {
             }
         }
     }
-    
     private:
     glm::vec3 point;
     glm::vec3 normal_vector;
@@ -271,7 +272,7 @@ class polygon : public shape {
     }
     private:
     //The plane the polygon is laying upon
-    shape p;
+    plane p;
     //The vertices of the polygon
     glm::vec3 T1;
     glm::vec3 T2;
