@@ -36,7 +36,7 @@ shape::intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,
     forReturn.isIntersection = false;
     std::vector<shape::intersection> intersected_objects;
     //Loop through all objects in scene looking for intersections with ray_vector
-    for(int i=0;i<global.shapes.size();i++){
+    for(int i=0;i<shapes.size();i++){
         shape::intersection current = shapes[i]->getIntersection(ray_vector,eye_position);
         if(current.isIntersection){
             intersected_objects.push_back(current);
@@ -59,7 +59,7 @@ shape::intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,
 }
 
 //Determines local lighting effects at hit point
-glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environment_ambient,std::vector<light> lights){
+glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environment_ambient,std::vector<shape*> shapes,std::vector<light> lights){
     shape* object_hit = hit.hit_object;
     //Initialize minimum values for diffuse and specular lighting
     glm::vec3 diffuse_lighting(0,0,0);
@@ -68,7 +68,7 @@ glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environ
     for(light l:lights){
         //Only calculate diffuse and specular lighting if there is a clear line of sight from the light source to the shape
         //(creates shadows)
-        //if(!object_hit.light_blocked(l,hit,global.shapes)){
+        //if(!object_hit.light_blocked(l,hit,shapes)){
             glm::vec3 light_intensity = l.get_intensity();
             glm::vec3 light_position = l.get_position();
 
@@ -120,9 +120,10 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position,s
     
     if(rec_depth > MAX_DEPTH){return settings.background_colour;}
     else {
-        hit = RayIntersection(ray_vector,eye_position,shapes); 
+        hit = RayIntersection(ray_vector,eye_position,shapes);
         if(hit.isIntersection){
-            local_colour = shade(hit,eye_position,settings.environment_ambient,lights);
+            std::cout<<"Made it!";
+            local_colour = shade(hit,eye_position,settings.environment_ambient,shapes,lights);
             /*if (hit_object.isReflective()){
                 glm::vec3 reflection_vector = calc_reflection(ray_vector,hit_object,hit_point,hit_normal);
                 reflect_colour = RayTrace((hit_point,reflection_vector),rec_depth+1);
@@ -140,6 +141,7 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position,s
 glm::vec3 get_ray(int x, int y,glm::vec3 eye_position){
     glm::vec3 screen_position(x,y,0);
     glm::vec3 ray_vector = glm::normalize(screen_position-eye_position);
+    return ray_vector;
 }
 
 pixel* create_image(){
@@ -157,9 +159,9 @@ pixel* create_image(){
             //Get colour at ray hit point
             glm::vec3 pixel_colour = RayTrace(ray_vector,1,eye_position,settings);
             //Set colour values in image
-            image[i*global.width +j].r = glm::clamp(pixel_colour[0]*255.0f,0.0f,255.0f);
-            image[i*global.width +j].g = glm::clamp(pixel_colour[1]*255.0f,0.0f,255.0f);
-            image[i*global.width +j].b = glm::clamp(pixel_colour[2]*255.0f,0.0f,255.0f);
+            image[i*width +j].r = glm::clamp(pixel_colour[0]*255.0f,0.0f,255.0f);
+            image[i*width +j].g = glm::clamp(pixel_colour[1]*255.0f,0.0f,255.0f);
+            image[i*width +j].b = glm::clamp(pixel_colour[2]*255.0f,0.0f,255.0f);
         }
     }
 
@@ -203,11 +205,12 @@ void set_image(){
         }
     }
 
-    write_img("Test Image.png",image,global.width,global.height);
+    //write_img("Test Image.png",image,global.width,global.height);
 }
 
 int main (int argc , char **argv){
     pixel* image = create_image();
-    write_img("Ray Traced Image.png",image,global.width,global.height);
+    char* name = "Ray Traced Image.png";
+    write_img(name,image,global.width,global.height);
     //set_image();
 }

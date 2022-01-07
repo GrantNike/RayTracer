@@ -44,6 +44,13 @@ setup setup_camera(){
     sphere *s = new sphere(position,radius,ambient,diffuse,specular,spec_highlight);
     initial_settings.shapes.push_back(s);
 
+    //Define triangle
+    glm::vec3 T1(960.0,590.0,120.0);
+    glm::vec3 T2(910.0,490.0,120.0);
+    glm::vec3 T3(710.0,490.0,120.0);
+    polygon *p = new polygon(T1,T2,T3,ambient,diffuse,specular,spec_highlight);
+    initial_settings.shapes.push_back(p);
+
     //Define one light
     glm::vec3 light_position(960.0,940.0,100.0);
     glm::vec3 intensity(1,1,1);

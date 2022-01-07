@@ -168,7 +168,7 @@ class plane : public shape {
                         = AX + BY + CZ = (Ax1+By1+Cz1) <- d = dot product(point,normal vector)
     */
     public:
-    plane(glm::vec3 point, glm::vec3 normal_vector,glm::vec3 diffuse,glm::vec3 ambient,glm::vec3 specular,float specular_highlight){
+    plane(glm::vec3 point, glm::vec3 normal_vector,glm::vec3 ambient,glm::vec3 diffuse,glm::vec3 specular,float specular_highlight){
         this->point = point;
         this->normal_vector = normal_vector;
         d = glm::dot(point,normal_vector);
@@ -215,6 +215,7 @@ class plane : public shape {
                 forReturn.hit_point = glm::vec3(xi,yi,zi);
                 forReturn.hit_normal = normal_vector;
                 forReturn.hit_object = this;
+                return forReturn;
             }
         }
     }
@@ -228,7 +229,7 @@ class plane : public shape {
  ************************************************************************/
 class polygon : public shape {
     public:
-    polygon(glm::vec3 T1,glm::vec3 T2, glm::vec3 T3, glm::vec3 diffuse,glm::vec3 ambient,glm::vec3 specular,float specular_highlight){
+    polygon(glm::vec3 T1,glm::vec3 T2, glm::vec3 T3, glm::vec3 ambient,glm::vec3 diffuse,glm::vec3 specular,float specular_highlight){
         this->T1 = T1;
         this->T2 = T2;
         this->T3 = T3;
