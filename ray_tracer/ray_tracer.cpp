@@ -59,18 +59,18 @@ shape::intersection RayIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,
 }
 
 //Determines local lighting effects at hit point
-glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environment_ambient,std::vector<shape*> shapes,std::vector<light> lights){
+glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environment_ambient,std::vector<shape*> shapes,std::vector<light*> &lights){
     shape* object_hit = hit.hit_object;
     //Initialize minimum values for diffuse and specular lighting
     glm::vec3 diffuse_lighting(0,0,0);
     glm::vec3 specular_lighting(0,0,0);
     //Compute diffuse and specular lighting for all light sources in scene
-    for(light l:lights){
+    for(auto l:lights){
         //Only calculate diffuse and specular lighting if there is a clear line of sight from the light source to the shape
         //(creates shadows)
-        //if(!object_hit.light_blocked(l,hit,shapes)){
-            glm::vec3 light_intensity = l.get_intensity();
-            glm::vec3 light_position = l.get_position();
+        if(!object_hit->light_blocked(*l,hit,shapes)){
+            glm::vec3 light_intensity = l->get_intensity();
+            glm::vec3 light_position = l->get_position();
 
             /*Compute diffuse lighting for current light source*/
             //Diffuse lighting coefficient
@@ -78,7 +78,7 @@ glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environ
             //Cosine of the angle between the vector of the light hitting the object and the normal vector of the hit point
             float cosine_A = glm::dot(glm::normalize(light_position-hit.hit_point),hit.hit_normal);
             //The diffuse lighting at the hit point from light l
-            glm::vec3 diffuse = diffuse_coefficient * glm::clamp(light_intensity * cosine_A,0.0f,255.0f);
+            glm::vec3 diffuse = diffuse_coefficient * glm::clamp(light_intensity * cosine_A,0.0f,1.0f);
             //Take the highest intesity diffuse lighting from all light sources as the final diffuse value
             diffuse_lighting = glm::max(diffuse,diffuse_lighting);
 
@@ -93,15 +93,17 @@ glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environ
             //The cosine of the angle between the incident ray and the reflection ray
             float cosine_B = glm::dot(incident_ray,reflection_ray);
             //The specular lighting at the hit point from the light l
-            glm::vec3 specular = specular_coefficient * glm::clamp(light_intensity * powf(cosine_B,specular_highlight),0.0f,255.0f);
+            glm::vec3 specular = specular_coefficient * glm::clamp(light_intensity * powf(cosine_B,specular_highlight),0.0f,1.0f);
             //Take the highest intesity specular lighting from all light sources as the final specular value
             specular_lighting = glm::max(specular,specular_lighting);
-        //}
+        }
     }
     //Compute ambient lighting
-    glm::vec3 ambient_lighting = glm::clamp(object_hit->get_ambient()*environment_ambient,glm::vec3(0.0f),glm::vec3(255.0f));
+    glm::vec3 ambient_lighting = glm::clamp(object_hit->get_ambient()*environment_ambient,0.0f,1.0f);
     //Return new colour with added lighting effects
-    return glm::clamp(ambient_lighting + diffuse_lighting + specular_lighting,glm::vec3(0.0f),glm::vec3(255.0f));
+    glm::vec3 final_colour = glm::clamp(ambient_lighting + diffuse_lighting + specular_lighting,glm::vec3(0),glm::vec3(1));
+    //std::cout<<final_colour[0]<<","<<final_colour[1]<<","<<final_colour[2]<<std::endl;
+    return final_colour;
 }
 
 /*************************************************************************
@@ -110,7 +112,7 @@ glm::vec3 shade(shape::intersection hit,glm::vec3 eye_position,glm::vec3 environ
 //Returns the colour of the given ray_vector
 glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position,setup settings){
     std::vector<shape*> shapes = settings.shapes;
-    std::vector<light> lights = settings.lights;
+    std::vector<light*> lights = settings.lights;
     //Values will be used to get a final colour value if the ray has intersected an object
     glm::vec3 local_colour;
     glm::vec3 reflect_colour;
@@ -122,7 +124,6 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position,s
     else {
         hit = RayIntersection(ray_vector,eye_position,shapes);
         if(hit.isIntersection){
-            std::cout<<"Made it!";
             local_colour = shade(hit,eye_position,settings.environment_ambient,shapes,lights);
             /*if (hit_object.isReflective()){
                 glm::vec3 reflection_vector = calc_reflection(ray_vector,hit_object,hit_point,hit_normal);
@@ -132,7 +133,7 @@ glm::vec3 RayTrace(glm::vec3 ray_vector,float rec_depth,glm::vec3 eye_position,s
                 glm::vec3 trans_vector = calc_transmission(ray_vector,hit_object,hit_point,hit_normal);
                 trans_colour = RayTrace((hit_point,trans_vector),rec_depth+1);
             }*/
-            return glm::clamp(local_colour+reflect_colour+trans_colour,0.0f,255.0f);
+            return glm::clamp(local_colour+reflect_colour+trans_colour,0.0f,1.0f);
         }
         else{return settings.background_colour;}
     }
@@ -159,9 +160,9 @@ pixel* create_image(){
             //Get colour at ray hit point
             glm::vec3 pixel_colour = RayTrace(ray_vector,1,eye_position,settings);
             //Set colour values in image
-            image[i*width +j].r = glm::clamp(pixel_colour[0]*255.0f,0.0f,255.0f);
-            image[i*width +j].g = glm::clamp(pixel_colour[1]*255.0f,0.0f,255.0f);
-            image[i*width +j].b = glm::clamp(pixel_colour[2]*255.0f,0.0f,255.0f);
+            image[i*width +j].r = glm::clamp(pixel_colour[0]*255,0.0f,255.0f);
+            image[i*width +j].g = glm::clamp(pixel_colour[1]*255,0.0f,255.0f);
+            image[i*width +j].b = glm::clamp(pixel_colour[2]*255,0.0f,255.0f);
         }
     }
 

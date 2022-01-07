@@ -25,7 +25,7 @@ class shape{
     //Gets intersection of ray with an object in scene
     virtual intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position) = 0;
     //Check if there is another shape between the shape and the given light source
-    bool light_blocked(light light, intersection hit, std::vector<shape*> &shapes){
+    bool light_blocked(light &light, intersection hit, std::vector<shape*> &shapes){
         glm::vec3 light_position = light.get_position();
         glm::vec3 light_vector = glm::normalize(hit.hit_point-light_position);
         float light_to_shape = glm::distance(hit.hit_point,light_position);
@@ -136,6 +136,7 @@ class sphere : public shape {
             float yi = eye_position[1] + yd*t;
             float zi = eye_position[2] + zd*t;
             forReturn.hit_point = glm::vec3(xi,yi,zi);
+            forReturn.hit_point = glm::normalize(forReturn.hit_point);
             //Calculate normal vector at hit point
             float xnormal = (xi-position[0])/radius;
             float ynormal = (yi-position[1])/radius;
