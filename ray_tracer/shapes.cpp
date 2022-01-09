@@ -23,18 +23,20 @@ class shape{
         shape* hit_object;
     }intersection;
     //Gets intersection of ray with an object in scene
-    virtual intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position) = 0;
+    virtual bool getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,glm::vec3 &hit_point, glm::vec3 &normal_vector, glm::vec3 &incident_vector) = 0;
     //Check if there is another shape between the shape and the given light source
-    bool light_blocked(light &light, intersection hit, std::vector<shape*> &shapes){
+    bool light_blocked(light &light, glm::vec3 shape_hit_point, std::vector<shape*> &shapes){
         glm::vec3 light_position = light.get_position();
-        glm::vec3 light_vector = glm::normalize(hit.hit_point-light_position);
-        float light_to_shape = glm::distance(hit.hit_point,light_position);
+        glm::vec3 light_vector = glm::normalize(shape_hit_point-light_position);
+        float light_to_shape = glm::distance(shape_hit_point,light_position);
         for(shape *s:shapes){
             if(s == this) continue;
-            intersection between = getIntersection(light_vector,light_position);
+            glm::vec3 hit_point;
+            glm::vec3 temp;
+            bool between = getIntersection(light_vector,light_position,hit_point,temp,temp);
 
-            if(between.isIntersection){
-                float between_distance = glm::distance(between.hit_point,light_position);
+            if(between){
+                float between_distance = glm::distance(hit_point,light_position);
                 if(between_distance < light_to_shape){
                     return true;
                 }
@@ -95,9 +97,8 @@ class sphere : public shape {
     glm::vec3 getPosition(){
         return position;
     }
-    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
-        intersection forReturn;
-        forReturn.isIntersection = false;
+    bool getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,glm::vec3 &hit_point, glm::vec3 &normal_vector, glm::vec3 &incident_vector){
+        bool is_intersection = false;
         //For B and C in Quadratic equation for solving circle intersection
         float x0minusxc = eye_position[0]-position[0];
         float y0minusyc = eye_position[1]-position[1];
@@ -127,30 +128,27 @@ class sphere : public shape {
             }
             else{
                 //Return no intersection
-                return forReturn;
+                return is_intersection;
             }
-            forReturn.isIntersection = true;
+            is_intersection = true;
             //forReturn.hit_object = this;
             //Calculate hit point of ray on sphere
             float xi = eye_position[0] + xd*t;
             float yi = eye_position[1] + yd*t;
             float zi = eye_position[2] + zd*t;
-            forReturn.hit_point = glm::vec3(xi,yi,zi);
-            forReturn.hit_point = glm::normalize(forReturn.hit_point);
+            hit_point = glm::normalize(glm::vec3(xi,yi,zi));
             //Calculate normal vector at hit point
             float xnormal = (xi-position[0])/radius;
             float ynormal = (yi-position[1])/radius;
             float znormal = (zi-position[2])/radius;
-            forReturn.hit_normal = glm::vec3(xnormal,ynormal,znormal);
             //Normalize normal vector
-            forReturn.hit_normal = glm::normalize(forReturn.hit_normal);
-            forReturn.hit_object = this;
+            normal_vector = glm::normalize(glm::vec3(xnormal,ynormal,znormal));
             //Return data
-            return forReturn;
+            return is_intersection;
         }
         else{
             //Return no intersection
-            return forReturn;
+            return is_intersection;
         }
     }
     private:
@@ -171,7 +169,7 @@ class plane : public shape {
     public:
     plane(glm::vec3 point, glm::vec3 normal_vector,glm::vec3 ambient,glm::vec3 diffuse,glm::vec3 specular,float specular_highlight){
         this->point = point;
-        this->normal_vector = normal_vector;
+        this->plane_normal = normal_vector;
         d = glm::dot(point,normal_vector);
         this->ambient_coefficient = ambient;
         this->specular_coefficient = specular;
@@ -181,7 +179,7 @@ class plane : public shape {
     //For use by the polygon class
     plane(glm::vec3 point, glm::vec3 normal_vector){
         this->point = point;
-        this->normal_vector = normal_vector;
+        this->plane_normal = normal_vector;
         d = glm::dot(point,normal_vector);
     }
     plane(){}
@@ -192,37 +190,35 @@ class plane : public shape {
         return point;
     }
     glm::vec3 getNormal(){
-        return normal_vector;
+        return plane_normal;
     }
     float getD(){
         return d;
     }
-    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
-        intersection forReturn;
-        forReturn.isIntersection = false;
-        float normalDotEye = glm::dot(normal_vector,eye_position);
+    bool getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,glm::vec3 &hit_point, glm::vec3 &normal_vector, glm::vec3 &incident_vector){
+        bool is_intersection = false;
+        float normalDotEye = glm::dot(plane_normal,eye_position);
         //If it equals 0, then the ray is parallel to the plane, 
         //if it is greater than 0 then the normal of the plane is pointing away from the ray
-        if(normalDotEye >= 0) return forReturn;
+        if(normalDotEye >= 0) return is_intersection;
         else{
-            float t = -1.0f*(normalDotEye + d)/(glm::dot(normal_vector,ray_vector));
+            float t = -1.0f*(normalDotEye + d)/(glm::dot(plane_normal,ray_vector));
             //If t<0 then plane is behind ray
-            if(t<0) return forReturn;
+            if(t<0) return is_intersection;
             else{
-                forReturn.isIntersection = true;
+                is_intersection = true;
                 float xi = eye_position[0]+ray_vector[0]*t;
                 float yi = eye_position[1]+ray_vector[1]*t;
                 float zi = eye_position[2]+ray_vector[2]*t;
-                forReturn.hit_point = glm::vec3(xi,yi,zi);
-                forReturn.hit_normal = normal_vector;
-                forReturn.hit_object = this;
-                return forReturn;
+                hit_point = glm::normalize(glm::vec3(xi,yi,zi));
+                normal_vector = plane_normal;
+                return is_intersection;
             }
         }
     }
     private:
     glm::vec3 point;
-    glm::vec3 normal_vector;
+    glm::vec3 plane_normal;
     float d;
 };
 /*************************************************************************
@@ -246,13 +242,15 @@ class polygon : public shape {
     std::string getType(){
         return "polygon";
     }
-    intersection getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position){
-        intersection forReturn;
-        forReturn.isIntersection = false;
-        intersection plane_intersect = p.getIntersection(ray_vector,eye_position);
-        if(plane_intersect.isIntersection){
+    bool getIntersection(glm::vec3 ray_vector,glm::vec3 eye_position,glm::vec3 &hit_point, glm::vec3 &normal_vector, glm::vec3 &incident_vector){
+        bool is_intersection = false;
+        glm::vec3 plane_hit_point;
+        glm::vec3 plane_normal;
+        glm::vec3 place_holder;
+        bool plane_intersect = p.getIntersection(ray_vector,eye_position,plane_hit_point,plane_normal,place_holder);
+        if(plane_intersect){
             //Polygon interior test using barycentric coordinates
-            glm::vec3 P = plane_intersect.hit_point;
+            glm::vec3 P = plane_hit_point;
             glm::vec3 v0 = T2 - T1;
             glm::vec3 v1 = T3 - T1;
             float dot00 = glm::dot(v0,v0);
@@ -264,13 +262,12 @@ class polygon : public shape {
             float alpha = (dot11 * dot02 - dot01 * dot12) * invDenom;
             float beta = (dot00 * dot12 - dot01 * dot02) * invDenom;
             if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1){
-                forReturn.isIntersection = true;
-                forReturn.hit_point = P;
-                forReturn.hit_normal = plane_intersect.hit_normal;
-                forReturn.hit_object = this;
+                is_intersection = true;
+                hit_point = P;
+                normal_vector = plane_normal;
             }
         }
-        return forReturn;
+        return is_intersection;
     }
     private:
     //The plane the polygon is laying upon

@@ -6,9 +6,9 @@
 
 #include "shapes.cpp"
 
-class setup{
+class test{
     public:
-    setup(std::vector<shape*> &shapes, std::vector<light*> &lights){
+    test(std::vector<shape*> &shapes, std::vector<light*> &lights){
         //Set up eye and screen
         eye_ray_origin = glm::vec3(960,540,-70);
         bottom_left = glm::vec3(0,0,0);
@@ -18,12 +18,12 @@ class setup{
 
         //Define one simple sphere
         //Sphere specific parameters
-        glm::vec3 position(960,540,100);
-        float radius = 120;
+        glm::vec3 position(0,0,0);
+        float radius = 3;
         //Lighting parameters
         glm::vec3 ambient(0.215, 0.1745, 0.215);
-        glm::vec3 diffuse(0.8142, 0.0757, 0.1757);
-        glm::vec3 specular(0.5, 0.5, 0.5);
+        glm::vec3 diffuse(0.9142, 0.0757, 0.1757);
+        glm::vec3 specular(0.2, 0.2, 0.2);
         float spec_highlight = 5.0f;
         sphere *s = new sphere(position,radius,ambient,diffuse,specular,spec_highlight);
         shapes.push_back(s);
@@ -36,15 +36,15 @@ class setup{
         initial_settings.shapes.push_back(p);*/
 
         //Define one light
-        glm::vec3 light_position(0,0,300);
+        glm::vec3 light_position(0,3,10);
         glm::vec3 intensity(1,1,1);
         light *l = new light(light_position,intensity);
         lights.push_back(l);
 
         //Define another light for specular reflection
-        glm::vec3 light_position2(360,440,100);
-        light l2(light_position2,intensity);
-        //initial_settings.lights.push_back(l2);
+        glm::vec3 light_position2(360,540,50);
+        light *l2 = new light(light_position2,intensity);
+        //lights.push_back(l2);
     }
 
     /*std::vector<shape*> get_shapes(){
